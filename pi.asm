@@ -1,55 +1,45 @@
 section	.text
-
     global _start
-
-_start:	                
+_start:	  
+    call _initialise              
     mov eax, 4
     mov ebx, 1
     mov ecx, setcolor
     mov edx, setcolor.len
     int 80h
-
+;checking memory
     mov rax, mem
     call _print
     call _delay
-
+;checking cpu fan
     mov rax, cpu_fan
     call _print
     call _delay
-
+;post result
     mov rax, post
     call _print
     call _delay
-
+;boot process
     mov rax, boot
     call _print
     call _delay
-
-back_cls:
-
+;welcome on succesfull boot
     call _delay
-    ;call _cls
-
     mov rax, welcome5
     call _print
-
 back:
-  
+;bash print and color
     call _color   
- 
     mov rax, bash
     call _print
-
+;white color for user
     call _defaultcolor
-
 ;read input
-;   mov eax, 3
-;   mov ebx, 2
-;   mov rcx, num  
-;   mov edx, 5         
-;   int 80h
-
-compare:
+    ;mov eax, 3
+    ;mov ebx, 2
+    ;mov rcx, num  
+    ;mov edx, 5         
+    ;int 80h
 ;read input
     xor rax, rax
     mov rdi, rax
@@ -69,6 +59,12 @@ compare:
     mov rcx, nameslen
     repe cmpsb 
     je _pname
+;print e
+    lea rdi, [ef]
+    lea rsi, [userpass]
+    mov rcx, elen
+    repe cmpsb 
+    je _printe
 ;print pi
     lea rdi, [pif]
     lea rsi, [userpass]
@@ -89,12 +85,11 @@ compare:
     je _help 
 ;in case of error 
     mov rax, error
-      call _print
-
-jmp back
-
+    call _print
+;return to enter command
+    jmp back
 _exit:
-
+   call _color  
    mov rax, shut
    call _print
    mov dword [tv_sec], 2 
@@ -106,14 +101,10 @@ _exit:
    mov	rax, 1
    xor	rbx, rbx
    int	80h
-
 _print:
-
     push rax
     mov rbx, 0
-
 _printLoop:
-
     inc rax
     inc rbx
     mov cl, [rax]
@@ -125,55 +116,52 @@ _printLoop:
     mov rdx, rbx
     syscall
     ret
-
 _pname:
-
     mov rax,name
     call _print
     jmp back
-
 _cls:
-
     mov eax, 4                         
     mov ebx, 1                          
     mov ecx, ClearTerm                  
     mov edx, CLEARLEN                  
     int 80h
     jmp back
-
+_initialise:
+    mov eax, 4                         
+    mov ebx, 1                          
+    mov ecx, ClearTerm                  
+    mov edx, CLEARLEN                  
+    int 80h
+    ret
 _delay:
-
-    mov dword [tv_sec], 0
+    mov dword [tv_sec], 1
     mov dword [tv_usec], 0
     mov eax, 162
     mov ebx, timeval
     mov ecx, 0
     int 0x80
     ret
-
 _printpi:
-
    mov rax, pi
    call _print
+   jmp back  
+_printe:
+   mov rax, e
+   call _print
    jmp back   
-
 _help:
-
    mov rax, helplist
    call _print
    jmp back
-
 _color:
-
    mov eax, 4
    mov ebx, 1
    mov ecx, setcolor
    mov edx, setcolor.len
    int 80h
    ret
-
 _defaultcolor:
-
     mov eax, 4
     mov ebx, 1
     mov ecx, defaultcolor
@@ -182,9 +170,7 @@ _defaultcolor:
     ret
 
 section .bss     
-      
-   num resb 64
-	
+   num resb 64	
 section	.data
    mem    	db	"Checking memory",0xa,0
    cpu_fan db "Checking CPU fan", 0xa,0
@@ -201,8 +187,9 @@ section	.data
    bash db "catOS#: ",0
    error db "command not found, try again" , 0xa,0
    welcome5 db "Please remember only 32-bit commands are accepted." ,0xa,0
-   pi db "3.14", 0xa,0	
-   helplist db "The following commands are present:" , 0xa , "cls", 0xa , "help", 0xa , "pi", 0xa , "shutdown", 0xa , "name" , 0xa , 0
+   pi db "3.14159265359", 0xa,0	
+   e db  "2.71828182846", 0xa,0
+   helplist db "The following commands are present:" , 0xa , "cls", 0xa , "help", 0xa , "pi", 0xa , "shutdown", 0xa , "name" , 0xa , "e" , 0xa , 0
    timeval:
     tv_sec  dd 0
     tv_usec dd 0
@@ -213,6 +200,8 @@ section	.data
    nameslen equ $ - names 
    pif db 'pi', 0xa  
    pilen equ $ - pif
+   ef db 'e', 0xa  
+   elen equ $ - ef
    clsf db 'cls', 0xa  
    clslen equ $ - clsf
    helpf db 'help', 0xa  
@@ -223,4 +212,3 @@ section	.data
    .len equ $ - setcolor
    defaultcolor db 1Bh, '[37;40m', 0  ; white on black
    .len equ $ - defaultcolor
-
